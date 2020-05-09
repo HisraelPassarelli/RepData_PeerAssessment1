@@ -78,3 +78,144 @@ g1<- ggplot(data=stepsbyday, aes(x=steps))+
         labs(title = "Steps Taken Per Day")
 g1
 ```
+
+##### **3. Calculate and report the mean and median of the total number of steps taken per day**
+
+```{r}
+mean(stepsbyday$steps)
+median(stepsbyday$steps)
+```
+The mean of the total number of steps taken per day is 10,766. The median result is close to that observed in the mean: 10,765 steps per day.  
+
+#### `r col("**What is the average daily activity pattern?**", "cornflowerblue")`
+
+##### **1. Make a time series plot (i.e. type="l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)**
+
+```{r}
+steps_interval <- aggregate(steps ~ interval, data=activity, FUN= mean, na.rm=TRUE) 
+
+head(steps_interval)
+```
+
+```{r}
+ggplot(data=steps_interval, aes(x=interval, y=steps))+
+        geom_line(color="dodgerblue4", size=.8)+
+        labs(x="Interval", y="Steps", title= "Steps by Interval")+
+        theme_classic()
+```
+
+##### **2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?**
+
+```{r}
+steps_interval[which.max(steps_interval$steps),]
+```
+
+
+#### `r col("**Imputing missing values**", "cornflowerblue")`
+
+Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
+
+##### **1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)**
+
+```{r}
+sum(is.na(activity))
+```
+
+##### **2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.**
+
+The  strategy is choose the mean (of steps) of the corresponding interval as the replacing value.
+
+##### **3. Create a new dataset that is equal to the original dataset but with the missing data filled in.**.
+
+```{r}
+activity2 <- activity
+
+activity2$steps[is.na(activity2$steps)] <- mean(activity2$steps, na.rm = TRUE)
+
+stepsbyday2 <- aggregate(steps ~ date, data=activity2, FUN=sum)
+```
+
+#### **4.Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?**
+
+```{r}
+g2<- ggplot(data=stepsbyday2, aes(x=steps))+
+        geom_histogram(bins=20, 
+                       fill="dodgerblue4")+
+        theme_classic()+
+        xlab("Steps per day")+
+        ylab("Frequency")+
+        ylim(0,15)+
+        labs(title = "Steps taken per Day")
+g2
+```
+
+In order to analyze differences between both histograms I reproduced a new histogram with the same data of the first plot, but with the same scale limits in y-axis. This procedure avoids misleading interpretations about the data and allows to compare two cases side by side.  
+```{r}
+#GridExtra Package
+g1_New<- ggplot(data=stepsbyday, aes(x=steps))+
+        geom_histogram(bins=20, 
+                       fill="dodgerblue4")+
+        theme_classic()+
+        xlab("Steps per day")+
+        ylim(0,15)+
+        ylab("Frequency")+
+        labs(title = "Steps Taken Per Day")
+
+grid.arrange(g1_New,g2, ncol=2)
+```
+
+```{r}
+mean(stepsbyday2$steps)
+median(stepsbyday2$steps)
+```
+
+As we can see, the mean of steps taken per day became exactly same with or without considering missing values. Median value had a little change from 10,765 to 10,766.19 (same value of the mean of step without missing values). Both histograms have same distribution. 
+
+
+#### `r col("**Are there differences in activity patterns between weekdays and weekends?**", "cornflowerblue")`
+
+#### **1. Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.**
+
+In this stage I created a new vector of weekdays. Unfortunately, I have not succeeded in changing the default language from Portuguese to English yet. If you run this chunk, modify the  *weekdays1* vector content for the corresponding weekdays (Monday, Tuesday, Wednesday, Thursday and Friday) in your R language.
+
+```{r}
+activity$date <- as.Date(activity$date)
+
+#create a vector of weekdays
+weekdays1 <- as.factor(c('segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira'))
+
+#Use `%in%` and `weekdays` to create a logical vector
+#convert to `factor` and specify the `levels/labels`
+
+activity$wDay <-factor((weekdays(activity$date) %in% weekdays1), 
+         levels=c(FALSE, TRUE), labels=c('weekend', 'weekday'))
+newdata <- aggregate(steps ~ interval + wDay, data=activity, FUN = mean)
+table(newdata$wDay)
+```
+
+```{r}
+xyplot(steps ~ interval | factor(wDay),
+        data=newdata,
+        type="l",
+        layout=c(1,2),
+        xlab = "Interval",
+        ylab = "Number of Steps")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
